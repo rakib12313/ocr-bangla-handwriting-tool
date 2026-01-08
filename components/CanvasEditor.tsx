@@ -53,7 +53,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
 
   // Moving Element State
   const [dragInfo, setDragInfo] = useState<{ id: string, startX: number, startY: number, originalX: number, originalY: number } | null>(null);
-  const isDraggingElement = useRef(false); // To distinguish click vs drag
+  const isDraggingElement = useRef(false);
 
   // Text/Table Input State
   const [inputState, setInputState] = useState<{
@@ -75,14 +75,12 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
 
   const handleToolSelect = (newTool: ToolType) => {
     if (newTool === 'table') {
-        // Prompt for table configuration immediately upon selection
         const rows = prompt("Enter number of rows:", "3");
         const cols = prompt("Enter number of columns:", "3");
         if (rows !== null && cols !== null) {
              (window as any)._tempTableConfig = { rows: parseInt(rows) || 3, cols: parseInt(cols) || 3 };
              setTool(newTool);
         }
-        // If cancelled, do not switch tool
     } else {
         setTool(newTool);
     }
@@ -136,6 +134,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
                 y >= Math.min(y1, y2)-tol && y <= Math.max(y1, y2)+tol) return el.id;
         }
         else if (el.type === 'pen' || el.type === 'curve') {
+             // Basic bounding box for paths for simplicity
              if (!el.points || el.points.length < 2) continue;
              const xs = el.points.filter((_, idx) => idx % 2 === 0).map(v => v + (el.x || 0));
              const ys = el.points.filter((_, idx) => idx % 2 === 1).map(v => v + (el.y || 0));
@@ -150,7 +149,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    // If input is active, clicking elsewhere submits it
     if (inputState) {
         handleInputSubmit();
         return;
@@ -158,7 +156,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
 
     const { x, y } = getCoordinates(e);
 
-    // Hand Tool: Pan only
     if (tool === 'hand') {
       setIsPanning(true);
       lastPanPoint.current = { x: e.clientX, y: e.clientY };
@@ -166,7 +163,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
       return;
     }
 
-    // Select Tool: Move items
     if (tool === 'select') {
         const hitId = hitTest(x, y);
         if (hitId) {
@@ -179,7 +175,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
                     originalX: el.x || 0,
                     originalY: el.y || 0
                 });
-                isDraggingElement.current = false; // Reset drag flag
+                isDraggingElement.current = false;
                 e.currentTarget.setPointerCapture(e.pointerId);
                 return;
             }
@@ -188,13 +184,11 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
 
     e.currentTarget.setPointerCapture(e.pointerId);
     
-    // Text Tool: Start input
     if (tool === 'text') {
       setInputState({ x, y, text: '', type: 'text' });
       return;
     }
 
-    // Drawing Tools Initialization
     setIsDrawing(true);
     const id = crypto.randomUUID();
 
@@ -232,7 +226,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    // Panning Viewport
     if (isPanning) {
       const dx = e.clientX - lastPanPoint.current.x;
       const dy = e.clientY - lastPanPoint.current.y;
@@ -243,12 +236,10 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
 
     const { x, y } = getCoordinates(e);
 
-    // Moving Element (Select Tool)
     if (dragInfo && tool === 'select') {
         const dx = x - dragInfo.startX;
         const dy = y - dragInfo.startY;
         
-        // Detect if we are actually dragging vs just clicking
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
             isDraggingElement.current = true;
         }
@@ -262,7 +253,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
         return;
     }
 
-    // Drawing Element
     if (!isDrawing || !currentElement) return;
 
     if (tool === 'pen' || tool === 'curve') {
@@ -296,7 +286,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
     e.currentTarget.releasePointerCapture(e.pointerId);
 
     if (currentElement) {
-      // Filter out tiny accidental clicks for shapes
       if (['rect', 'circle', 'line', 'table', 'stamp'].includes(currentElement.type)) {
         if (Math.abs(currentElement.width || 0) < 5 && Math.abs(currentElement.height || 0) < 5) {
             const defaultSize = 50;
@@ -315,7 +304,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
   const handleElementClick = (el: Element, e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // If we were dragging an object, don't trigger click events (like opening table editor)
     if (tool === 'select' && isDraggingElement.current) {
         return;
     }
@@ -325,7 +313,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
       return;
     }
     
-    // Table Cell Editing Logic
     if (el.type === 'table' && tool === 'select') {
       const canvasCoords = getCoordinates(e as unknown as React.PointerEvent);
       
@@ -364,7 +351,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
   const handleInputSubmit = () => {
     if (!inputState) return;
 
-    // Save Text Tool input
     if (inputState.type === 'text' && inputState.text.trim()) {
       setElements([...elements, {
         id: crypto.randomUUID(),
@@ -376,7 +362,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
         fontSize: 20
       }]);
     } 
-    // Save Table Cell input
     else if (inputState.type === 'tableCell' && inputState.id && inputState.cellKey) {
        setElements(elements.map(el => {
          if (el.id === inputState.id) {
@@ -397,8 +382,6 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({ initialData, onSave 
       setPanOffset({ x: 0, y: 0 });
     }
   };
-
-  // --- Render Helpers ---
 
   const getSvgPathFromPoints = (points: number[]) => {
     if (points.length < 4) return "";

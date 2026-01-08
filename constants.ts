@@ -1,5 +1,12 @@
+
 // Models
-export const OCR_MODEL = 'gemini-3-flash-preview';
+export const AVAILABLE_MODELS = [
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3.0 Flash', description: 'Fastest, low latency' },
+  { id: 'gemini-3-pro-preview', name: 'Gemini 3.0 Pro', description: 'High reasoning & accuracy' },
+  { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash', description: 'Balanced performance' },
+];
+
+export const DEFAULT_MODEL = 'gemini-3-flash-preview';
 
 // Prompts
 export const BANGLA_OCR_SYSTEM_PROMPT = `

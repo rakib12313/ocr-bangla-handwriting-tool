@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { OCR_MODEL, BANGLA_OCR_SYSTEM_PROMPT } from '../constants';
+import { BANGLA_OCR_SYSTEM_PROMPT } from '../constants';
 import { ProcessingResult } from '../types';
 
 let aiInstance: GoogleGenAI | null = null;
@@ -25,14 +25,15 @@ const fileToGenerativePart = (base64Data: string, mimeType: string) => {
 
 export const performOCR = async (
   imageBase64: string, 
-  mimeType: string
+  mimeType: string,
+  model: string
 ): Promise<ProcessingResult> => {
   try {
     const ai = getAIInstance();
     const imagePart = fileToGenerativePart(imageBase64, mimeType);
 
     const response = await ai.models.generateContent({
-      model: OCR_MODEL,
+      model: model,
       contents: {
         parts: [imagePart, { text: "Transcribe this Bangla handwriting." }],
       },
@@ -51,7 +52,7 @@ export const performOCR = async (
 
     return {
       text: text.trim(),
-      confidence: 0.95, // Gemini doesn't return explicit confidence scores per token easily, mocking high confidence for successful generation
+      confidence: 0.95,
     };
 
   } catch (error: any) {

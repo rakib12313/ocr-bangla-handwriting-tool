@@ -4,6 +4,7 @@ import { FileUpload } from '../components/FileUpload';
 import { Button } from '../components/Button';
 import { performOCR } from '../services/geminiService';
 import { useDocuments } from '../context/DocumentContext';
+import { useModel } from '../context/ModelContext';
 import { OCRStatus } from '../types';
 import { ROUTES } from '../constants';
 import { Sparkles, AlertCircle } from 'lucide-react';
@@ -16,6 +17,7 @@ export const NewScanPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { addDocument } = useDocuments();
+  const { model } = useModel();
   const navigate = useNavigate();
 
   const handleProcess = async () => {
@@ -56,9 +58,9 @@ export const NewScanPage: React.FC = () => {
             console.warn('Cloudinary upload error:', uploadErr);
         }
 
-        // 3. Perform OCR
+        // 3. Perform OCR with selected model
         try {
-          const result = await performOCR(base64Data, file.type);
+          const result = await performOCR(base64Data, file.type, model);
           
           const newDoc = {
             id: crypto.randomUUID(),
@@ -92,11 +94,11 @@ export const NewScanPage: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">New Document Scan</h2>
-        <p className="text-slate-500 mt-1">Upload a clear image of Bangla handwriting to begin.</p>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">New Document Scan</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Upload a clear image of Bangla handwriting to begin.</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sm:p-8">
         <FileUpload 
           selectedFile={file} 
           onFileSelect={setFile} 
@@ -104,13 +106,16 @@ export const NewScanPage: React.FC = () => {
         />
         
         {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-lg flex items-start gap-3 text-red-700">
+          <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg flex items-start gap-3 text-red-700 dark:text-red-400">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <p className="text-sm">{error}</p>
           </div>
         )}
 
-        <div className="mt-8 flex justify-end">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-slate-400 italic">
+             Using model: <span className="font-semibold text-brand-600">{model}</span>
+          </p>
           <Button 
             disabled={!file} 
             isLoading={isLoading} 
@@ -123,9 +128,9 @@ export const NewScanPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
-        <h4 className="font-medium text-blue-900 mb-2">Tips for best results:</h4>
-        <ul className="list-disc list-inside text-sm text-blue-800 space-y-1">
+      <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-5">
+        <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Tips for best results:</h4>
+        <ul className="list-disc list-inside text-sm text-blue-800 dark:text-blue-400 space-y-1">
           <li>Ensure good lighting and minimal shadows.</li>
           <li>Keep the paper flat and text aligned horizontally.</li>
           <li>High contrast (dark ink on white paper) works best.</li>
